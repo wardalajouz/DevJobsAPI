@@ -13,9 +13,9 @@ namespace DevJobsAPI.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Salary { get; set; }
-        public DateTime PostedDate { get; set; }
+        public DateTime PostedDate { get; set; } = DateTime.UtcNow;
 
-      
+
 
 
     }

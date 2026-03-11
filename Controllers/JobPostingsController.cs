@@ -8,9 +8,9 @@ namespace DevJobsAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class JobPostingsController : Controller
+    public class JobPostingsController : ControllerBase
     {
-        private readonly ApplicationDbContext? _context;
+        private readonly ApplicationDbContext _context;
 
         public JobPostingsController(ApplicationDbContext context)
         {
@@ -25,21 +25,94 @@ namespace DevJobsAPI.Controllers
 
         }
         [HttpPost]
-        public async Task<IActionResult> CreateJobPosting(JobPostingDto jobPostingDto)
+        public async Task<IActionResult> CreateJobPosting([FromBody] CreateJobPostingRequestDto createDto) // [FromBody] is optional here since it's the default for complex types, but it's good to be explicit
         {
             var jobPosting = new JobPosting
             {
-                Title = jobPostingDto.Title,
-                Description = jobPostingDto.Description,
-                Company = jobPostingDto.Company,
-                Location = jobPostingDto.Location,
-                Salary = jobPostingDto.Salary,
-                PostedDate = jobPostingDto.PostedDate
+                Title = createDto.Title,
+                Description = createDto.Description,
+                Company = createDto.Company,
+                Location = createDto.Location,
+                Salary = createDto.Salary,
+                PostedDate = DateTime.Now
+
             };
             // save to database
             await _context.JobPostings.AddAsync(jobPosting);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetJobPostings), new { id = jobPosting.Id }, JobPostingMapper.ToDto(jobPosting));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetJobPostingById([FromRoute] int id) // [Fromroute] is optional here since id is in the route, but it's good to be explicit
+        {
+            var Jobposting = await _context.JobPostings.FindAsync(id);
+            if (Jobposting == null)
+            {
+                return NotFound();
+            }
+            return Ok(JobPostingMapper.ToDto(Jobposting));
+
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteJobPostingById([FromRoute] int id)
+        {
+            var jobPosting = await _context.JobPostings.FindAsync(id);
+            if (jobPosting == null)
+            {
+                return NotFound();
+            }
+            _context.JobPostings.Remove(jobPosting);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateJobPostingById([FromRoute] int id, [FromBody] CreateJobPostingRequestDto updateDto)
+        {
+            var jobPosting = await _context.JobPostings.FindAsync(id);
+            if (jobPosting == null)
+            {
+                return NotFound();
+            }
+            jobPosting.Title = updateDto.Title;
+            jobPosting.Description = updateDto.Description;
+            jobPosting.Company = updateDto.Company;
+            jobPosting.Location = updateDto.Location;
+            jobPosting.Salary = updateDto.Salary;
+            await _context.SaveChangesAsync();
+            return Ok(JobPostingMapper.ToDto(jobPosting));
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchJobPostings(
+            [FromQuery] string? title,
+            [FromQuery] string? company,
+            [FromQuery] string? location,
+            [FromQuery] decimal? minSalary)
+        // this allow the user to search for job posting by these attribute, and the user can provide one or more of these attribute to filter the job posting, if the user provide none of these attribute, it will return all job posting
+        {
+            var query = _context.JobPostings.AsQueryable(); // Start with the base query
+            if (!string.IsNullOrEmpty(title)) // If a title filter is provided, add it to the query
+            {
+                query = query.Where(jp => jp.Title.Contains(title)); // This will filter job postings to those whose title contains the specified string (case-sensitive). You can use .ToLower() for case-insensitive search if needed.
+            }
+            if (!string.IsNullOrEmpty(company)) // If a company filter is provided, add it to the query
+            {
+                query = query.Where(jp => jp.Company.Contains(company)); // This will filter job postings to those whose company contains the specified string (case-sensitive). You can use .ToLower() 
+            }
+            if (!string.IsNullOrEmpty(location))
+            {
+                query=query.Where(jp => jp.Location.Contains(location)); 
+            }
+            if (minSalary.HasValue)
+            {
+                query=query.Where(jp => jp.Salary >= minSalary.Value);
+            }
+            var jobPostings = await query.ToListAsync(); // Execute the query and get the results
+            var jobPostingDtos = jobPostings.Select(jp => JobPostingMapper.ToDto(jp)).ToList(); // Map the results to DTOs
+            return Ok(jobPostingDtos); // Return the filtered list of job postings as DTOs
         }
     }
 }

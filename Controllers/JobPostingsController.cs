@@ -46,12 +46,12 @@ namespace DevJobsAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetJobPostingById([FromRoute] int id) // [Fromroute] is optional here since id is in the route, but it's good to be explicit
         {
-            var Jobposting = await _context.JobPostings.FindAsync(id);
-            if (Jobposting == null)
+            var jobPosting = await _context.JobPostings.FindAsync(id);
+            if (jobPosting == null)
             {
                 return NotFound();
             }
-            return Ok(JobPostingMapper.ToDto(Jobposting));
+            return Ok(JobPostingMapper.ToDto(jobPosting));
 
         }
 
@@ -96,15 +96,15 @@ namespace DevJobsAPI.Controllers
             var query = _context.JobPostings.AsQueryable(); // Start with the base query
             if (!string.IsNullOrEmpty(title)) // If a title filter is provided, add it to the query
             {
-                query = query.Where(jp => jp.Title.Contains(title)); // This will filter job postings to those whose title contains the specified string (case-sensitive). You can use .ToLower() for case-insensitive search if needed.
+                query = query.Where(jp => jp.Title.ToLower().Contains(title.ToLower())); // This will filter job postings to those whose title contains the specified string (not case-sensitive). 
             }
             if (!string.IsNullOrEmpty(company)) // If a company filter is provided, add it to the query
             {
-                query = query.Where(jp => jp.Company.Contains(company)); // This will filter job postings to those whose company contains the specified string (case-sensitive). You can use .ToLower() 
+                query = query.Where(jp => jp.Company.ToLower().Contains(company.ToLower())); // This will filter job postings to those whose company contains the specified string (not case-sensitive). 
             }
             if (!string.IsNullOrEmpty(location))
             {
-                query=query.Where(jp => jp.Location.Contains(location)); 
+                query=query.Where(jp => jp.Location.ToLower().Contains(location.ToLower())); // This will filter job postings to those whose location contains the specified string (not case-sensitive).
             }
             if (minSalary.HasValue)
             {

@@ -3,9 +3,9 @@ using DevJobsAPI.Dtos.JobPosting;
 using DevJobsAPI.Models;
 namespace DevJobsAPI.Mapper
 {
-    public class JobPostingMapper
+    public static class JobPostingMapper
     {
-        public static JobPostingDto ToDto(JobPosting jobPosting)
+        public static JobPostingDto ToDto(this JobPosting jobPosting)
         {
             return new JobPostingDto
             {

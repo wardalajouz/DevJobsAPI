@@ -3,6 +3,7 @@ using DevJobsAPI.Models;
 using DevJobsAPI.Dtos.JobPosting;
 using DevJobsAPI.Mapper;
 using DevJobsAPI.Interfaces;
+using DevJobsAPI.Helpers;
 
 namespace DevJobsAPI.Controllers
 {
@@ -18,17 +19,18 @@ namespace DevJobsAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+                 [FromQuery]QueryObject query) // we can use the QueryObject class to encapsulate all the query parameters for filtering and pagination, this will help us to keep our controller clean and organized.
         {
-            var jobs = await _repository.GetAllAsync();
+      
+            var jobs = await _repository.GetAllAsync(query);
 
-            // Map the results to DTOs using our extension method
             var jobDtos = jobs.Select(s => s.ToDto()).ToList();
 
             return Ok(jobDtos);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id) // [Fromroute] is optional here since id is in the route, but it's good to be explicit
         {
             var job = await _repository.GetByIdAsync(id);
@@ -62,7 +64,7 @@ namespace DevJobsAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = jobModel.Id }, jobModel.ToDto());
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             // The repository handles finding the entity and the SaveChangesAsync logic
@@ -76,5 +78,7 @@ namespace DevJobsAPI.Controllers
             // return 204 No Content as the professional way to say "It's gone"
             return NoContent();
         }
+
+        
     }
 }

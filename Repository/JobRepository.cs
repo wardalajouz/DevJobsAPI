@@ -1,4 +1,5 @@
 ﻿using DevJobsAPI.Data;
+using DevJobsAPI.Helpers;
 using DevJobsAPI.Interfaces;
 using DevJobsAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +12,30 @@ namespace DevJobsAPI.Repository
 
         public JobRepository(ApplicationDbContext context)
         {
-            // FIX: This was backwards in your code! It should be this:
+            
             _context = context;
         }
 
-        public async Task<List<JobPosting>> GetAllAsync()
+        public async Task<List<JobPosting>> GetAllAsync(QueryObject query)
         {
-            return await _context.JobPostings.ToListAsync();
+            var jobs = _context.JobPostings.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Title))
+                jobs = jobs.Where(s => s.Title.ToLower().Contains(query.Title.ToLower()));
+
+            if (!string.IsNullOrWhiteSpace(query.Company))
+                jobs = jobs.Where(s => s.Company.ToLower().Contains(query.Company.ToLower()));
+
+            if (!string.IsNullOrWhiteSpace(query.Location))
+                jobs = jobs.Where(s => s.Location.ToLower().Contains(query.Location.ToLower()));
+
+            if (query.MinSalary.HasValue)
+                jobs = jobs.Where(s => s.Salary >= query.MinSalary.Value);
+
+            // Implement pagination after filtering
+            var skipnumber = (query.PageNumber - 1) * query.PageSize;
+
+            return await jobs.Skip(skipnumber).Take(query.PageSize).ToListAsync();
         }
 
         public async Task<JobPosting?> GetByIdAsync(int id)

@@ -1,4 +1,5 @@
-﻿using DevJobsAPI.Models;
+﻿using DevJobsAPI.Helpers;
+using DevJobsAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevJobsAPI.Interfaces
@@ -6,8 +7,8 @@ namespace DevJobsAPI.Interfaces
     public interface IJobRepository
     {
 
-        Task<List<JobPosting>> GetAllAsync();
-       
+        Task<List<JobPosting>> GetAllAsync(QueryObject query);
+
         Task<JobPosting?> GetByIdAsync(int id);
 
         Task<JobPosting> CreateAsync(JobPosting jobPosting);

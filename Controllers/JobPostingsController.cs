@@ -20,9 +20,9 @@ namespace DevJobsAPI.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetAll(
-                 [FromQuery]QueryObject query) // we can use the QueryObject class to encapsulate all the query parameters for filtering and pagination, this will help us to keep our controller clean and organized.
+                 [FromQuery] QueryObject query) // we can use the QueryObject class to encapsulate all the query parameters for filtering and pagination, this will help us to keep our controller clean and organized.
         {
-      
+
             var jobs = await _repository.GetAllAsync(query);
 
             var jobDtos = jobs.Select(s => s.ToDto()).ToList();
@@ -79,6 +79,24 @@ namespace DevJobsAPI.Controllers
             return NoContent();
         }
 
-        
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] CreateJobPostingRequestDto updateDto)
+        {
+            var jobModel = new JobPosting
+            {
+                Title = updateDto.Title,
+                Description = updateDto.Description,
+                Company = updateDto.Company,
+                Location = updateDto.Location,
+                Salary = updateDto.Salary
+            };
+            var updatedJob = await _repository.UpdateAsync(id, jobModel);
+            if (updatedJob == null)
+            {
+                return NotFound();
+            }
+            return Ok(updatedJob.ToDto());
+
+        }
     }
 }

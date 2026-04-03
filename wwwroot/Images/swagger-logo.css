@@ -1,0 +1,8 @@
+﻿/* Custom logo for Swagger UI header */
+.swagger-ui .topbar .logo__img {
+    /* Use the exact name of your file */
+    content: url('README.png');
+    width: 35px;
+    height: auto;
+    padding-top: 5px; /* Adds a bit of space so it looks balanced */
+}

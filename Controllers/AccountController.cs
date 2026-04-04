@@ -1,9 +1,11 @@
 ﻿using DevJobsAPI.Dtos.Account;
 using DevJobsAPI.Interfaces;
 using DevJobsAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Rewrite;
+using System.Security.Claims;
 
 namespace DevJobsAPI.Controllers
 {
@@ -99,6 +101,24 @@ namespace DevJobsAPI.Controllers
                 Token = _tokenService.CreateToken(user)
             }); // Return the user details along with the token
 
+        }
+
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null) return NotFound();
+
+            return Ok(new
+            {
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                LastName = user.LastName, // This will work now that you added it to the model!
+                Initial = !string.IsNullOrEmpty(user.FirstName) ? user.FirstName.Substring(0, 1).ToUpper() : "U"
+            });
         }
 
     }

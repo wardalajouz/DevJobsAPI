@@ -14,6 +14,14 @@ namespace DevJobsAPI.Models
 
         // The Job they applied for
         public int JobPostingId { get; set; }
+
         public JobPosting JobPosting { get; set; }
+
+
+        // For the Job form
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string CVUrl { get; set; } // We store the link to the file
+        public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
     }
 }

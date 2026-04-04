@@ -62,5 +62,7 @@ namespace DevJobsAPI.Data
         public DbSet<SavedJob> SavedJobs { get; set; }
 
         public DbSet<JobApplication> JobApplications { get; set; }
+
+        
     }
 }

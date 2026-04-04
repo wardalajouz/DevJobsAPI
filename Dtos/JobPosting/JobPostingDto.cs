@@ -10,5 +10,8 @@
         public string Location { get; set; } = string.Empty;
         public decimal Salary { get; set; }
         public DateTime PostedDate { get; set; }
+
+        public bool HasApplied { get; set; }
+        public bool IsSaved { get; set; }
     }
 }

@@ -37,16 +37,27 @@ namespace DevJobsAPI.Controllers
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Optimized: Fetch the user's applied and saved IDs once to avoid N+1 queries
+            var appliedJobIds = new HashSet<int>();
+            var savedJobIds = new HashSet<int>();
+
+            if (userId != null)
+            {
+                appliedJobIds = (await _context.JobApplications
+                    .Where(a => a.AppUserId == userId)
+                    .Select(a => a.JobPostingId)
+                    .ToListAsync()).ToHashSet();
+
+                savedJobIds = (await _context.SavedJobs
+                    .Where(sj => sj.AppUserId == userId)
+                    .Select(sj => sj.JobId)
+                    .ToListAsync()).ToHashSet();
+            }
+
             var jobDtos = jobs.Select(s => {
                 var dto = s.ToDto();
-
-                if (userId != null)
-                {
-                    // Fixed: Using 'JobPostingId' to match your model
-                    dto.HasApplied = _context.JobApplications.Any(a => a.JobPostingId == s.Id && a.AppUserId == userId);
-                    dto.IsSaved = _context.SavedJobs.Any(sj => sj.JobId == s.Id && sj.AppUserId == userId);
-                }
-
+                dto.HasApplied = appliedJobIds.Contains(s.Id);
+                dto.IsSaved = savedJobIds.Contains(s.Id);
                 return dto;
             }).ToList();
 
@@ -74,6 +85,9 @@ namespace DevJobsAPI.Controllers
             // Get the current user from the DB using the Token
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
+
+            if (appUser == null) return Unauthorized();
+
             var jobModel = new JobPosting
             {
                 Title = createDto.Title,
@@ -99,10 +113,6 @@ namespace DevJobsAPI.Controllers
         {
             // find the job first(we need to see who owns it)
             var job = await _repository.GetByIdAsync(id);
-            // The repository handles finding the entity and the SaveChangesAsync logic
-            //var job = await _repository.DeleteAsync(id);
-
-
 
             if (job == null)
             {
@@ -113,10 +123,11 @@ namespace DevJobsAPI.Controllers
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
 
-            if (job.AppUserId != appUser.Id)
+            if (appUser == null || job.AppUserId != appUser.Id)
             {
                 return Forbid(); // 403 Forbidden - , You can't delete someone else's post
             }
+
             await _repository.DeleteAsync(id);
 
             // return 204 No Content as the professional way to say "It's gone"
@@ -139,7 +150,7 @@ namespace DevJobsAPI.Controllers
             var appUser = await _userManager.FindByNameAsync(username);
 
             // security check  , do u own this job? 
-            if (job.AppUserId != appUser.Id)
+            if (appUser == null || job.AppUserId != appUser.Id)
             {
                 return Forbid();
             }
@@ -155,6 +166,8 @@ namespace DevJobsAPI.Controllers
             };
             var updatedJob = await _repository.UpdateAsync(id, jobModel);
 
+            if (updatedJob == null) return NotFound();
+
             return Ok(updatedJob.ToDto());
 
         }
@@ -165,16 +178,20 @@ namespace DevJobsAPI.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Check if already applied using JobPostingId
             if (await _context.JobApplications.AnyAsync(a => a.JobPostingId == jobId && a.AppUserId == userId))
                 return BadRequest("You have already applied for this position.");
 
+            // Use the explicit 'JobApplication' type to avoid conflicts with static classes
             var application = new JobApplication
             {
                 JobPostingId = jobId,
                 AppUserId = userId,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
+                Phone = request.Phone ?? "",
+                LinkedInUrl = request.LinkedInUrl ?? "",
+                ExperienceLevel = request.ExperienceLevel ?? "",
+                CoverLetter = request.CoverLetter ?? "",
                 CVUrl = request.CVUrl,
                 AppliedAt = DateTime.UtcNow
             };
@@ -182,7 +199,7 @@ namespace DevJobsAPI.Controllers
             _context.JobApplications.Add(application);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Application submitted!" });
+            return Ok(new { message = "Application submitted successfully!" });
         }
 
 

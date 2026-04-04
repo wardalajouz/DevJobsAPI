@@ -6,9 +6,10 @@ namespace DevJobsAPI.Models
     public class AppUser : IdentityUser
     {
         // Personal Information
-        public string FirstName { get; set; } 
-        public string? FullName { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string? FullName { get; set; } = string.Empty;
+      
         public string? Bio { get; set; }
 
         // Professional Links

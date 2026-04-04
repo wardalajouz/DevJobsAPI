@@ -15,7 +15,8 @@ namespace DevJobsAPI.Mapper
                 Company = jobPosting.Company,
                 Location = jobPosting.Location,
                 Salary = jobPosting.Salary,
-                PostedDate = jobPosting.PostedDate
+                PostedDate = jobPosting.PostedDate,
+                AppUserId = jobPosting.AppUserId
             };
         }
 

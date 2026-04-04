@@ -38,7 +38,9 @@ namespace DevJobsAPI.Controllers
                 var appUser = new AppUser
                 {
                     UserName = registerDto.UserName,
-                    Email = registerDto.Email
+                    Email = registerDto.Email,
+                    FirstName = registerDto.FirstName ?? "", 
+                    LastName = registerDto.LastName ?? ""    
                 };
 
                 var createduser = await _userManager.CreateAsync(appUser, registerDto.Password!);

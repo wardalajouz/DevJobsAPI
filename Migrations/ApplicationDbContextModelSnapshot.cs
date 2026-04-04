@@ -144,7 +144,7 @@ namespace DevJobsAPI.Migrations
 
                     b.HasIndex("JobPostingId");
 
-                    b.ToTable("JobApplications");
+                    b.ToTable("JobApplications", (string)null);
                 });
 
             modelBuilder.Entity("DevJobsAPI.Models.JobPosting", b =>
@@ -184,7 +184,7 @@ namespace DevJobsAPI.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("JobPostings");
+                    b.ToTable("JobPostings", (string)null);
                 });
 
             modelBuilder.Entity("DevJobsAPI.Models.SavedJob", b =>
@@ -199,7 +199,7 @@ namespace DevJobsAPI.Migrations
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("SavedJobs");
+                    b.ToTable("SavedJobs", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

@@ -19,9 +19,14 @@ namespace DevJobsAPI.Models
 
 
         // For the Job form
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
         public string CVUrl { get; set; } // We store the link to the file
         public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
+
+        public string Phone { get; set; } = string.Empty;
+        public string LinkedInUrl { get; set; } = string.Empty;
+        public string ExperienceLevel { get; set; } = string.Empty; 
+        public string CoverLetter { get; set; } = string.Empty;
     }
 }

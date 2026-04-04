@@ -13,5 +13,8 @@ namespace DevJobsAPI.Dtos.Account
         [Required]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters.")]
         public string? Password { get; set; }
+
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
     }
 }

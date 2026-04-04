@@ -13,5 +13,7 @@
 
         public bool HasApplied { get; set; }
         public bool IsSaved { get; set; }
+
+        public string? AppUserId { get; set; }
     }
 }

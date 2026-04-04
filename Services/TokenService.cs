@@ -25,7 +25,9 @@ namespace DevJobsAPI.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.GivenName,user.UserName)
+                new Claim(JwtRegisteredClaimNames.GivenName,user.UserName),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id)
             };
 
             // 2. Define the Credentials (The "Signature" method)

@@ -219,5 +219,66 @@ namespace DevJobsAPI.Controllers
 
             return Ok();
         }
+
+
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteJob(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var job = await _context.JobPostings.FindAsync(id);
+
+            if (job == null) return NotFound();
+            if (job.AppUserId != userId) return Forbid(); // Security check!
+
+            _context.JobPostings.Remove(job);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateJob(int id, [FromBody] UpdateJobRequestDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var job = await _context.JobPostings.FindAsync(id);
+
+            if (job == null) return NotFound();
+            if (job.AppUserId != userId) return Forbid();
+
+            job.Title = dto.Title;
+            job.Description = dto.Description;
+            job.Company = dto.Company;
+            job.Location = dto.Location;
+            job.Salary = dto.Salary;
+
+            await _context.SaveChangesAsync();
+            return Ok(job);
+        }
+
+        [HttpGet("my-applicants")]
+        [Authorize]
+        public async Task<IActionResult> GetMyApplicants()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var applicants = await _context.JobApplications
+                .Where(a => a.JobPosting.AppUserId == userId) // Only jobs I posted
+                .Select(a => new ApplicationResponseDto
+                {
+                    Id = a.Id,
+                    JobTitle = a.JobPosting.Title,
+                    ApplicantName = a.FirstName + " " + a.LastName,
+                    Email = a.AppUser.Email,
+                    Phone = a.Phone,
+                    ExperienceLevel = a.ExperienceLevel,
+                    CVUrl = a.CVUrl,
+                    AppliedAt = a.AppliedAt
+                })
+                .OrderByDescending(a => a.AppliedAt)
+                .ToListAsync();
+
+            return Ok(applicants);
+        }
     }
 }

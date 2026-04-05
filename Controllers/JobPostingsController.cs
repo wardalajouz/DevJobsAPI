@@ -29,10 +29,10 @@ namespace DevJobsAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-                 [FromQuery] QueryObject query) // we can use the QueryObject class to encapsulate all the query parameters for filtering and pagination, this will help us to keep our controller clean and organized.
+        public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
         {
-
+            // Note: Ensure your Repository's GetAllAsync uses .OrderByDescending(j => j.CreatedAt) 
+            // so that Page 1 always shows the newest jobs first.
             var jobs = await _repository.GetAllAsync(query);
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -65,24 +65,19 @@ namespace DevJobsAPI.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById([FromRoute] int id) // [Fromroute] is optional here since id is in the route, but it's good to be explicit
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var job = await _repository.GetByIdAsync(id);
 
-            if (job == null)
-            {
-                return NotFound();
-            }
+            if (job == null) return NotFound();
 
             return Ok(job.ToDto());
         }
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> Create([FromBody] CreateJobPostingRequestDto createDto) // [FromBody] is optional here since it's the default for complex types, but it's good to be explicit
+        public async Task<IActionResult> Create([FromBody] CreateJobPostingRequestDto createDto)
         {
-
-            // Get the current user from the DB using the Token
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
 
@@ -99,9 +94,6 @@ namespace DevJobsAPI.Controllers
                 AppUserId = appUser.Id // to link the job to this specific user
             };
 
-            // save to database via repository
-            // we use the repository to add the job posting to the database, this will help us to keep our controller clean 
-            // and separate the concerns of data access from the controller logic.
             await _repository.CreateAsync(jobModel);
 
             return CreatedAtAction(nameof(GetById), new { id = jobModel.Id }, jobModel.ToDto());
@@ -111,21 +103,17 @@ namespace DevJobsAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            // find the job first(we need to see who owns it)
             var job = await _repository.GetByIdAsync(id);
 
-            if (job == null)
-            {
-                return NotFound();
-            }
+            if (job == null) return NotFound();
 
-            // Get the current user
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
 
+            // Security check: You can't delete someone else's post
             if (appUser == null || job.AppUserId != appUser.Id)
             {
-                return Forbid(); // 403 Forbidden - , You can't delete someone else's post
+                return Forbid();
             }
 
             await _repository.DeleteAsync(id);
@@ -138,18 +126,13 @@ namespace DevJobsAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] CreateJobPostingRequestDto updateDto)
         {
-            // first find the job 
             var job = await _repository.GetByIdAsync(id);
-            if (job == null)
-            {
-                return NotFound("Job posting not found.");
-            }
+            if (job == null) return NotFound("Job posting not found.");
 
-            // then identify the current logged in user 
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
 
-            // security check  , do u own this job? 
+            // security check , do u own this job? 
             if (appUser == null || job.AppUserId != appUser.Id)
             {
                 return Forbid();
@@ -164,12 +147,12 @@ namespace DevJobsAPI.Controllers
                 Salary = updateDto.Salary
                 // we dont update the app user here cuz the owner stays the owner for ever ;)
             };
+
             var updatedJob = await _repository.UpdateAsync(id, jobModel);
 
             if (updatedJob == null) return NotFound();
 
             return Ok(updatedJob.ToDto());
-
         }
 
         [HttpPost("{jobId}/apply")]
@@ -181,7 +164,6 @@ namespace DevJobsAPI.Controllers
             if (await _context.JobApplications.AnyAsync(a => a.JobPostingId == jobId && a.AppUserId == userId))
                 return BadRequest("You have already applied for this position.");
 
-            // Use the explicit 'JobApplication' type to avoid conflicts with static classes
             var application = new JobApplication
             {
                 JobPostingId = jobId,
@@ -207,7 +189,7 @@ namespace DevJobsAPI.Controllers
         [Authorize]
         public async Task<IActionResult> UnsaveJob(int jobId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Gets current user ID
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var savedJob = await _context.SavedJobs
                 .FirstOrDefaultAsync(s => s.JobId == jobId && s.AppUserId == userId);
@@ -218,42 +200,6 @@ namespace DevJobsAPI.Controllers
             await _context.SaveChangesAsync();
 
             return Ok();
-        }
-
-
-        [HttpDelete("{id}")]
-        [Authorize]
-        public async Task<IActionResult> DeleteJob(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var job = await _context.JobPostings.FindAsync(id);
-
-            if (job == null) return NotFound();
-            if (job.AppUserId != userId) return Forbid(); // Security check!
-
-            _context.JobPostings.Remove(job);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        [HttpPut("{id}")]
-        [Authorize]
-        public async Task<IActionResult> UpdateJob(int id, [FromBody] UpdateJobRequestDto dto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var job = await _context.JobPostings.FindAsync(id);
-
-            if (job == null) return NotFound();
-            if (job.AppUserId != userId) return Forbid();
-
-            job.Title = dto.Title;
-            job.Description = dto.Description;
-            job.Company = dto.Company;
-            job.Location = dto.Location;
-            job.Salary = dto.Salary;
-
-            await _context.SaveChangesAsync();
-            return Ok(job);
         }
 
         [HttpGet("my-applicants")]

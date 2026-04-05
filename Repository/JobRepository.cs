@@ -32,6 +32,8 @@ namespace DevJobsAPI.Repository
             if (query.MinSalary.HasValue)
                 jobs = jobs.Where(s => s.Salary >= query.MinSalary.Value);
 
+            jobs = jobs.OrderByDescending(j => j.PostedDate);
+
             // Implement pagination after filtering
             var skipnumber = (query.PageNumber - 1) * query.PageSize;
 
